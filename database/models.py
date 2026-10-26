@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -36,4 +36,25 @@ class Lead(Base):
         default=lambda: datetime.now(timezone.utc),
         server_default=func.now(),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class OutreachCampaign(Base):
+    """An outreach email campaign generated for a lead."""
+
+    __tablename__ = "outreach_campaigns"
+
+    campaign_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    lead_id: Mapped[int] = mapped_column(
+        ForeignKey("leads.lead_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    email_subject: Mapped[str] = mapped_column(String, nullable=False)
+    email_content: Mapped[str] = mapped_column(Text, nullable=False)
+    follow_up_strategy: Mapped[str] = mapped_column(Text, nullable=False)
+    tone: Mapped[str] = mapped_column(String, nullable=False, default="professional")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
     )

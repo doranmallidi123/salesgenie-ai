@@ -8,9 +8,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.responses import JSONResponse
 
 from app.api.leads import router as leads_router
+from app.api.outreach import router as outreach_router
 
 app = FastAPI(title="SalesGenie AI API", version="1.0.0")
 app.include_router(leads_router)
+app.include_router(outreach_router)
 
 # Streamlit is normally served from :8501. The regex also permits other local
 # development ports without opening cross-origin access to remote hosts.
