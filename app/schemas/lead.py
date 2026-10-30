@@ -17,6 +17,8 @@ class LeadBase(BaseModel):
     lead_status: LeadStatus = "new"
     tech_stack: str | None = None
     funding_stage: str | None = Field(default=None, max_length=100)
+    company_size: str | None = Field(default=None, max_length=100)
+    revenue: float | None = Field(default=None, ge=0)
 
 
 class LeadCreate(LeadBase):
@@ -32,6 +34,8 @@ class LeadUpdate(BaseModel):
     lead_status: LeadStatus | None = None
     tech_stack: str | None = None
     funding_stage: str | None = Field(default=None, max_length=100)
+    company_size: str | None = Field(default=None, max_length=100)
+    revenue: float | None = Field(default=None, ge=0)
 
 
 class LeadResponse(LeadBase):

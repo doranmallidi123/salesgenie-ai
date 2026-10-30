@@ -133,6 +133,34 @@ def test_get_lead_not_found(client: TestClient) -> None:
     assert response.json()["detail"] == "Lead not found"
 
 
+def test_list_leads_pagination_and_filters(
+    client: TestClient, db_session_factory: sessionmaker[Session]
+) -> None:
+    """Listing supports page controls and the status and industry filters."""
+    with db_session_factory() as db:
+        db.add_all(
+            [
+                Lead(**_lead_payload(company_name="Acme", industry="Technology")),
+                Lead(**_lead_payload(company_name="Northwind", industry="Retail")),
+                Lead(
+                    **_lead_payload(
+                        company_name="Contoso", industry="Retail", lead_status="qualified"
+                    )
+                ),
+            ]
+        )
+        db.commit()
+
+    page = client.get("/leads/?skip=1&limit=1")
+    filtered = client.get("/leads/?industry=Retail&lead_status=qualified")
+
+    assert page.status_code == 200
+    assert len(page.json()) == 1
+    assert page.json()[0]["company_name"] == "Northwind"
+    assert filtered.status_code == 200
+    assert [lead["company_name"] for lead in filtered.json()] == ["Contoso"]
+
+
 def test_update_lead(client: TestClient, db_session_factory: sessionmaker[Session]) -> None:
     """A valid lifecycle stage update is persisted and returned."""
     with db_session_factory() as db:
@@ -150,6 +178,22 @@ def test_update_lead(client: TestClient, db_session_factory: sessionmaker[Sessio
         saved_lead = db.get(Lead, lead_id)
         assert saved_lead is not None
         assert saved_lead.lead_status == "contacted"
+
+
+def test_delete_lead(client: TestClient, db_session_factory: sessionmaker[Session]) -> None:
+    """Deleting a lead returns 204 and subsequent reads return 404."""
+    with db_session_factory() as db:
+        lead = Lead(**_lead_payload())
+        db.add(lead)
+        db.commit()
+        lead_id = lead.lead_id
+
+    deleted = client.delete(f"/leads/{lead_id}")
+    missing = client.get(f"/leads/{lead_id}")
+
+    assert deleted.status_code == 204
+    assert deleted.content == b""
+    assert missing.status_code == 404
 
 
 def test_csv_upload_and_deduplication(
@@ -205,3 +249,51 @@ def test_csv_upload_and_deduplication(
         lead_count = db.scalar(select(func.count()).select_from(Lead))
         assert lead_count == 3
         assert db.scalar(select(func.count()).select_from(Lead).where(Lead.company_name == "Northwind")) == 1
+
+
+def test_csv_upload_empty_file(client: TestClient) -> None:
+    """An empty upload returns a zero-count summary."""
+    response = client.post(
+        "/leads/upload-csv",
+        files={"file": ("empty.csv", b"", "text/csv")},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total_rows": 0,
+        "inserted": 0,
+        "duplicates_skipped": 0,
+        "errors": [],
+    }
+
+
+def test_csv_upload_missing_required_headers(client: TestClient) -> None:
+    """A CSV without required headers reports the missing columns."""
+    response = client.post(
+        "/leads/upload-csv",
+        files={"file": ("invalid.csv", b"company_name,industry\nAcme,Technology\n", "text/csv")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["inserted"] == 0
+    assert response.json()["errors"] == [
+        {"row": 1, "error": "Missing required columns: contact_name."}
+    ]
+
+
+def test_csv_upload_windows_1252_encoding(client: TestClient) -> None:
+    """Windows-1252 CSV content is decoded and imported."""
+    response = client.post(
+        "/leads/upload-csv",
+        files={
+            "file": (
+                "encoded.csv",
+                "company_name,industry,contact_name\nCafé,Food,Renée\n".encode("cp1252"),
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["inserted"] == 1
+    assert response.json()["errors"] == []
