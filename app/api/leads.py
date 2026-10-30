@@ -126,15 +126,16 @@ async def upload_leads_csv(
         (str(data["company_name"]).lower(), str(data["contact_name"]).lower())
         for _, data in candidates
     }
-    existing_pairs = set(
-        db.execute(
+    existing_pairs = {
+        (company_name, contact_name)
+        for company_name, contact_name in db.execute(
             select(func.lower(Lead.company_name), func.lower(Lead.contact_name)).where(
                 tuple_(func.lower(Lead.company_name), func.lower(Lead.contact_name)).in_(
                     sorted(candidate_pairs)
                 )
             )
-        ).tuples()
-    )
+        ).all()
+    }
 
     seen_pairs = set(existing_pairs)
     insert_rows: list[dict[str, object]] = []

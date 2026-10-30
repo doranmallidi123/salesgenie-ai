@@ -7,12 +7,18 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.responses import JSONResponse
 
+from app.api.crm import router as crm_router
+from app.api.analytics import router as analytics_router
 from app.api.leads import router as leads_router
 from app.api.outreach import router as outreach_router
+from app.api.scoring import router as scoring_router
 
 app = FastAPI(title="SalesGenie AI API", version="1.0.0")
 app.include_router(leads_router)
+app.include_router(crm_router)
+app.include_router(analytics_router)
 app.include_router(outreach_router)
+app.include_router(scoring_router)
 
 # Streamlit is normally served from :8501. The regex also permits other local
 # development ports without opening cross-origin access to remote hosts.
