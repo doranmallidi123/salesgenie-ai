@@ -3,8 +3,7 @@
 ## SalesGenie AI — Milestone 2
 
 **Author:** M Doran, Backend Developer  
-**Reporting period:** October 21–29, 2026  
-**Prepared:** November 2, 2026  
+**Reporting period:** October 21–29, 2026 
 **Target milestone:** Milestone 2 — AI Outreach & Lead Intelligence
 
 ## 1. Executive Summary
@@ -122,16 +121,3 @@ The earlier attempt using the system Python failed during test collection becaus
 
 The repository supports review of backend contracts and persistence behavior. It does not provide evidence of frontend contract validation with a Streamlit screen, end-to-end AI/ML integration, or completion of the October 29 demo. Those items require confirmation from the project team.
 
-## 6. Next Steps & Backend Roadmap for Milestone 3
-
-1. Confirm the Milestone 2 demo status and record feedback or outstanding defects.
-2. Keep the confirmed test result with the milestone evidence and address the Starlette test-client deprecation when updating test dependencies.
-3. Agree on the Streamlit integration contract and implement any required draft refresh, edit, and send operations.
-4. Confirm whether outreach generation and scoring should remain deterministic baselines or connect to production AI/ML services.
-5. Implement CRM provider field mapping and synchronization behind provider-specific service adapters.
-6. Persist CRM synchronization attempts and outcomes, then add tests for contact, activity, and deal-stage workflows.
-7. Document configuration, credentials handling, failure behavior, and retry expectations for external CRM connections.
-
----
-
-**Evidence note:** This report reflects the requested schedule and backend implementation present in the repository as of November 2, 2026. Schedule assignments are described as planned work; completion is claimed only where supported by repository artifacts. Test execution status was updated after running both named test files in the project virtual environment.
