@@ -3,7 +3,8 @@
 ## SalesGenie AI — Milestone 2
 
 **Author:** M Doran, Backend Developer  
-**Reporting period:** October 21–29, 2026 
+**Reporting period:** October 21–29, 2026
+ 
 **Target milestone:** Milestone 2 — AI Outreach & Lead Intelligence
 
 ## 1. Executive Summary
@@ -105,19 +106,30 @@ Both tables reference `leads.lead_id`. The ORM declares cascading deletion for t
 
 The repository contains integration tests for the health endpoint, outreach generation and history, scoring persistence and retrieval, missing-lead responses, and invalid scoring-service output. Tests use a temporary SQLite database with FastAPI dependency overrides.
 
-### Test execution status — confirmed November 2, 2026
+### Test execution status
 
-Executed the two project test files in the project virtual environment:
+**Outreach generation and history:**   Ran the dedicated integration test for draft creation, persistence, and history retrieval:
 
 ```text
-.venv/bin/python -m pytest -q tests/test_intelligence.py tests/test_leads.py
-..................                                                       [100%]
-18 passed, 1 warning in 0.53s
+.venv/bin/python -m pytest -q tests/test_intelligence.py::test_outreach_generation_and_history
+.                                                                        [100%]
+1 passed, 1 warning in 0.41s
 ```
 
-**Result:** 18 tests passed; no test failures. One `StarletteDeprecationWarning` notes that using `httpx` with `starlette.testclient` is deprecated and recommends `httpx2`. The warning did not affect the results.
+The test verifies that `POST /intelligence/outreach` returns a created campaign with generated subject, content, follow-up strategy, tone, and lead ID; that the campaign is persisted; and that `GET /intelligence/outreach/{lead_id}` returns the saved campaign in its history. The test passed. It does not cover editing or sending email.
 
-The earlier attempt using the system Python failed during test collection because FastAPI was not installed in that interpreter; no tests ran in that attempt. The confirmed result above comes from the project `.venv` and supersedes that failed collection attempt.
+**Focused Milestone 2 run:**  Executed `tests/test_intelligence.py`, which exercises outreach generation and history, missing-lead handling, score creation and upsert, score retrieval, invalid scoring-service output, and the health endpoint. Tests use a temporary SQLite database with FastAPI dependency overrides.
 
-The repository supports review of backend contracts and persistence behavior. It does not provide evidence of frontend contract validation with a Streamlit screen, end-to-end AI/ML integration, or completion of the October 29 demo. Those items require confirmation from the project team.
+```text
+.venv/bin/python -m pytest -q tests/test_intelligence.py
+.......                                                                  [100%]
+7 passed, 1 warning in 0.59s
+```
+
+**Result:** All seven focused tests passed; no test failures.
+
+
+
+
+
 
