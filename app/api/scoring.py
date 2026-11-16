@@ -32,7 +32,7 @@ def _parse_scoring_result(raw_result: Any) -> LeadScoreResult:
 
 
 @router.post("/{lead_id}", response_model=LeadScoreResponse)
-def score_lead(lead_id: int, db: DatabaseSession) -> LeadScore:
+async def score_lead(lead_id: int, db: DatabaseSession) -> LeadScore:
     """Calculate and upsert the current score card for a lead."""
     lead = db.get(Lead, lead_id)
     if lead is None:
@@ -49,7 +49,14 @@ def score_lead(lead_id: int, db: DatabaseSession) -> LeadScore:
         "revenue": lead.revenue,
         "status": lead.lead_status,
     }
-    result = _parse_scoring_result(ai_service.score_lead(lead_dict))
+    try:
+        raw_result = await ai_service.invoke_with_timeout(ai_service.score_lead, lead_dict)
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Lead scoring timed out.",
+        ) from exc
+    result = _parse_scoring_result(raw_result)
     values = result.model_dump()
 
     score_card = db.scalar(select(LeadScore).where(LeadScore.lead_id == lead_id))

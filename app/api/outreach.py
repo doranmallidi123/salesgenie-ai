@@ -16,7 +16,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
 
 
 @router.post("", response_model=OutreachResponse, status_code=status.HTTP_201_CREATED)
-def generate_outreach(
+async def generate_outreach(
     payload: OutreachRequest,
     db: DatabaseSession,
 ) -> OutreachCampaign:
@@ -35,7 +35,15 @@ def generate_outreach(
         "funding_stage": lead.funding_stage,
         "focus_points": payload.focus_points,
     }
-    generated = ai_service.generate_outreach_email(lead_data, payload.tone)
+    try:
+        generated = await ai_service.invoke_with_timeout(
+            ai_service.generate_outreach_email, lead_data, payload.tone
+        )
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Outreach generation timed out.",
+        ) from exc
     campaign = OutreachCampaign(
         lead_id=lead.lead_id,
         tone=payload.tone,

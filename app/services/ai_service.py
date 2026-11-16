@@ -5,6 +5,34 @@ can be replaced by an LLM-backed implementation without changing the API.
 """
 
 from typing import Any
+import asyncio
+import inspect
+from collections.abc import Callable
+from typing import TypeVar
+
+_Result = TypeVar("_Result")
+AI_CALL_TIMEOUT_SECONDS = 5.0
+
+
+async def invoke_with_timeout(
+    service_function: Callable[..., _Result], *args: Any
+) -> _Result:
+    """Run a sync or async AI service function with a five-second deadline.
+
+    Synchronous service functions run in a worker thread so they cannot block
+    the event loop. A timed-out thread may finish in the background, but the
+    HTTP request stops waiting and returns control within the deadline.
+    """
+    async def call_service() -> _Result:
+        if inspect.iscoroutinefunction(service_function):
+            result = await service_function(*args)  # type: ignore[misc]
+        else:
+            result = await asyncio.to_thread(service_function, *args)
+        if inspect.isawaitable(result):
+            return await result  # type: ignore[misc, no-any-return]
+        return result
+
+    return await asyncio.wait_for(call_service(), timeout=AI_CALL_TIMEOUT_SECONDS)
 
 
 def generate_outreach_email(

@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.core.security import AuthenticatedUser, require_role
 from app.schemas.crm import CRMStatusResponse, CRMSyncAction, CRMSyncLogResponse, CRMSyncRequest
 from app.services import crm_service
 from database.models import CRMSyncLog, Lead
@@ -22,6 +23,9 @@ def sync_lead_to_crm(
     lead_id: int,
     request: CRMSyncRequest,
     db: DatabaseSession,
+    _authorized_user: Annotated[
+        AuthenticatedUser, Depends(require_role(["admin", "manager"]))
+    ],
 ) -> CRMSyncLog:
     """Map a lead to the standard CRM payload, simulate sync, and log the attempt."""
     lead = db.get(Lead, lead_id)

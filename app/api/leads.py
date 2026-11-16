@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select, tuple_
 from sqlalchemy.orm import Session
 
+from app.core.security import AuthenticatedUser, require_role
 from app.database import get_db
 from app.schemas.lead import LeadCreate, LeadResponse, LeadUpdate
 from database.models import Lead
@@ -181,7 +182,13 @@ def update_lead(lead_id: int, payload: LeadUpdate, db: DatabaseSession) -> Lead:
 
 
 @router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_lead(lead_id: int, db: DatabaseSession) -> Response:
+def delete_lead(
+    lead_id: int,
+    db: DatabaseSession,
+    _authorized_user: Annotated[
+        AuthenticatedUser, Depends(require_role(["admin", "manager"]))
+    ],
+) -> Response:
     """Permanently remove a lead and return 404 if it is absent."""
     lead = db.get(Lead, lead_id)
     if lead is None:
